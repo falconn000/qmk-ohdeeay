@@ -6,6 +6,7 @@
 #define LT55 LT(5, KC_OUT)
 #define CDL KC_EXEC
 #define CDR KC_HELP
+#define MRKR KC_MENU
 
 enum layer_names {
     _BASE,
@@ -17,13 +18,57 @@ enum layer_names {
     _3ROW,
 };
 
+#ifdef OLED_ENABLE
+
+// Rotate OLED
+oled_rotation_t oled_init_user(oled_rotation_t rotation) {
+    return OLED_ROTATION_270;
+}
+
+// Active Layers + Caps 
+bool oled_task_user(void) {
+    switch (get_highest_layer(layer_state)) {
+        case _BASE:
+            oled_write_P(PSTR("BASE\n"), false);
+            break;
+        case _GAME:
+            oled_write_P(PSTR("GAME\n"), false);
+            break;
+        case _COLOR:
+            oled_write_P(PSTR("COLOR\n"), false);
+            break;
+        case _CLMK:
+            oled_write_P(PSTR("CLMK\n"), false);
+            break;
+        case _MODS:
+            oled_write_P(PSTR("MODS\n"), false);
+            break;
+        case _XTRAS:
+            oled_write_P(PSTR("XTRAS\n"), false);
+            break;
+        default:
+            oled_write_ln_P(PSTR("Undefined"), false);
+    }
+
+    // Host Keyboard LED Status
+    led_t led_state = host_keyboard_led_state();
+    oled_write_P(led_state.num_lock ? PSTR("NUM") : PSTR("\n"), false);
+    oled_write_P(led_state.caps_lock ? PSTR("CAPS") : PSTR("\n"), false);
+    oled_write_P(led_state.scroll_lock ? PSTR("SCR") : PSTR("\n"), false);
+    
+    return false;
+}
+
+#endif
+
+
  const uint16_t PROGMEM keymaps[][MATRIX_ROWS][MATRIX_COLS] = {
         [_BASE] = LAYOUT(
                          KC_ESC,           KC_1,               KC_2,          KC_3,          KC_4,          KC_5,                                                                         KC_6,          KC_7,          KC_8,          KC_9,              KC_0,               KC_PSCR, 
                          KC_TAB,           KC_Q,               KC_W,          KC_E,          KC_R,          KC_T,                                                                         KC_Y,          KC_U,          KC_I,          KC_O,              KC_P,               KC_DQUO, 
                          KC_LSFT,          KC_A,               KC_S,          KC_D,          KC_F,          KC_G,                                                                         KC_H,          KC_J,          KC_K,          KC_L,              RALT(KC_COMM),      KC_RBRC, 
                          KC_LCTL,          KC_Z,               KC_X,          KC_C,          KC_V,          KC_B,          KC_QUOT,                                        KC_TILD,       KC_N,          KC_M,          KC_COMM,       KC_DOT,            KC_MINS,            KC_LBRC, 
-                                                                              KC_LALT,       LT55,          MO(_MODS),     KC_SPC,                                         KC_BSPC,       KC_ENT,        KC_CAPS,       RGUI(KC_D)),
+                                                                              KC_LALT,       MO(_XTRAS),    MO(_MODS),     KC_SPC,                                         KC_BSPC,       KC_ENT,        KC_CAPS,       RGUI(KC_D)),
 /*
 *
 *
@@ -39,10 +84,10 @@ enum layer_names {
 *
 */
         [_COLOR] = LAYOUT(
-                         KC_ESC,          KC_NO,              RCS(KC_I),     LCTL(KC_I),    KC_NO,         LCTL(KC_F),                                                                    KC_NO,         LCTL(KC_X),    LCTL(KC_C),    LCTL(KC_V),        SGUI(KC_D),         KC_PSCR, 
-                         LCTL(KC_Q),      KC_TAB,             LALT(KC_BSLS), KC_W,          KC_BSLS,       LALT(KC_DOWN),                                                                 KC_NO,         KC_NO,         KC_UP,         KC_NO,             KC_NO,              KC_NO, 
-                         LCTL(KC_S),      KC_LSFT,            KC_A,          KC_S,          KC_D,          KC_F,                                                                          KC_NO,         KC_LEFT,       KC_DOWN,       KC_RGHT,           KC_NO,              KC_NO, 
-                         LSFT(KC_Z),      KC_LCTL,            KC_Z,          KC_X,          KC_C,          LCA(KC_F),      LCA(KC_C),                                      KC_NO,         KC_NO,         KC_NO,         KC_NO,         KC_NO,             KC_NO,              KC_NO, 
+                         KC_ESC,          KC_NO,              RCS(KC_I),     LCTL(KC_I),    KC_F12,        LCTL(KC_F),                                                                    KC_NO,         LCTL(KC_X),    LCTL(KC_C),      LCTL(KC_V),        SGUI(KC_D),         KC_PSCR, 
+                         LCTL(KC_Q),      KC_TAB,             LALT(KC_BSLS), KC_W,          KC_BSLS,       MRKR,                                                                          KC_NO,         KC_NO,         KC_HOME,         KC_NO,             KC_NO,              KC_NO, 
+                         LCTL(KC_S),      KC_LSFT,            KC_A,          KC_S,          KC_D,          KC_F,                                                                          KC_NO,         KC_NO,         KC_END,          KC_NO,             KC_NO,              KC_NO, 
+                         LSFT(KC_Z),      KC_LCTL,            KC_Z,          KC_X,          KC_C,          LCA(KC_F),      LALT(KC_DOWN),                                  LCA(KC_C),     KC_NO,         KC_NO,         KC_NO,           KC_NO,             KC_NO,              KC_NO, 
                                                                              TO(_BASE),     KC_R,          MO(_MODS),      KC_SPC,                                         KC_BSPC,       KC_ENT,        KC_NO,         KC_NO),
 /*
 *
@@ -53,7 +98,7 @@ enum layer_names {
                          KC_TAB,          KC_Q,               KC_W,          KC_F,          KC_P,          KC_B,                                                                          KC_J,          KC_L,          KC_U,          KC_Y,              KC_TILD,            LSFT(KC_QUOT), 
                          KC_LSFT,         KC_A,               KC_R,          KC_S,          KC_T,          KC_G,                                                                          KC_M,          KC_N,          KC_E,          KC_I,              KC_O,               KC_RBRC, 
                          KC_LCTL,         KC_Z,               KC_X,          KC_C,          KC_TRNS,       KC_V,           KC_QUOT,                                        RALT(KC_COMM), KC_K,          KC_H,          KC_COMM,       KC_DOT,            KC_MINS,            KC_LBRC, 
-                                                                             KC_LALT,       LT55,          MO(_MODS),      KC_SPC,                                         KC_BSPC,       KC_ENT,        KC_CAPS,       RGUI(KC_D)),
+                                                                             KC_LALT,       MO(_XTRAS),    MO(_MODS),      KC_SPC,                                         KC_BSPC,       KC_ENT,        KC_CAPS,       RGUI(KC_D)),
 /*
 *
 *
@@ -62,8 +107,8 @@ enum layer_names {
                          KC_PIPE,         KC_EXLM,            KC_AT,         KC_HASH,       KC_DLR,        KC_PERC,                                                                       KC_AMPR,       KC_SLSH,       KC_LPRN,       KC_RPRN,           KC_EQL,             LSFT(KC_PSCR), 
                          LALT(KC_F4),     LCA(KC_DOWN),       LCA(KC_M),     LCA(KC_U),     RCS(KC_T),     LCTL(KC_T),                                                                    LGUI(KC_TAB),  LCTL(KC_LEFT), KC_UP,         LCTL(KC_RGHT),     LCTL(KC_I),         KC_PLUS, 
                          KC_LSFT,         LCTL(KC_A),         LCTL(KC_X),    LCTL(KC_C),    LCTL(KC_V),    LGUI(KC_G),                                                                    LCTL(KC_F),    KC_LEFT,       KC_DOWN,       KC_RGHT,           LCTL(KC_B),         KC_ASTR, 
-                         KC_LCTL,         LCTL(KC_Z),         RCS(KC_Z),     LCTL(KC_S),    RCS(KC_N),     KC_DEL,         KC_GRV,                                         KC_CIRC,       KC_QUES,       RALT(KC_5),    KC_SCLN,       KC_COLN,           KC_UNDS,            TO(_BASE),
-                                                                             LGUI(KC_SPC),  KC_LGUI,       KC_NO,          SGUI(KC_S),                                     LALT(KC_SPC),  LCTL(KC_LSFT), LCTL(KC_S),    LGUI(KC_L)),
+                         KC_LCTL,         LCTL(KC_Z),         RCS(KC_Z),     LCTL(KC_S),    RCS(KC_N),     KC_DEL,         KC_GRV,                                         KC_CIRC,       KC_QUES,       RALT(KC_5),    KC_SCLN,       KC_COLN,           KC_UNDS,            LGUI(KC_L),
+                                                                             LGUI(KC_SPC),  KC_LGUI,       KC_NO,          SGUI(KC_S),                                     LALT(KC_SPC),  LCTL(KC_LSFT), KC_HOME,       KC_END),
 /*
 *
 *
@@ -73,7 +118,7 @@ enum layer_names {
                          KC_NO,           KC_BTN2,            KC_BTN4,       LCA(KC_W),     KC_BTN1,       LCAG(KC_3),                                                                    KC_F11,        KC_F12,        KC_NO,         KC_NO,             KC_NO,              KC_END, 
                          CDL,             KC_NO,              RCS(KC_TAB),   KC_F5,         LCTL(KC_TAB),  LCAG(KC_2),                                                                    KC_F6,         KC_F7,         KC_F8,         KC_F9,             KC_F10,             KC_GT, 
                          CDR,             KC_MPRV,            KC_MPLY,       KC_MNXT,       RCS(KC_V),     LCAG(KC_1),     KC_MSEL,                                          KC_PWR,      KC_F1,         KC_F2,         KC_F3,         KC_F4,             KC_F5,              KC_LT, 
-                                                                             LGUI(KC_R),    TO(_BASE),     KC_NO,          KC_SPC,                                           KC_BSPC,     KC_PENT,       LGUI(KC_LEFT), LGUI(KC_RGHT)),
+                                                                             LGUI(KC_R),    TO(_BASE),     KC_NO,          KC_SPC,                                           KC_BSPC,     LCAG(KC_4),    LGUI(KC_LEFT), LGUI(KC_RGHT)),
 /*
 *
 *
@@ -130,7 +175,16 @@ bool process_record_user(uint16_t keycode, keyrecord_t *record) {
                 unregister_code(KC_RIGHT);
                 return false;
             }
-            break;            
+            break;
+        case KC_MENU:
+            if (record->event.pressed) {
+                register_code(KC_BSLS);
+                unregister_code(KC_BSLS);
+                register_code(KC_M);
+                unregister_code(KC_M);
+                return false;
+            }
+            break;                   
     }
     return true;
 }
