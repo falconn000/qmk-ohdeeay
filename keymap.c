@@ -21,40 +21,106 @@ enum layer_names {
 #ifdef OLED_ENABLE
 
 // Rotate OLED
-oled_rotation_t oled_init_user(oled_rotation_t rotation) {
-    return OLED_ROTATION_270;
+// oled_rotation_t oled_init_user(oled_rotation_t rotation) {
+//    return OLED_ROTATION_270;
+// }
+
+// Gimmick border
+
+void oled_draw_border(void) {
+    for (uint8_t x = 0; x < 128; x++) {  // Top & Bottom Borders
+        oled_write_pixel(x, 0, true);
+        oled_write_pixel(x, 31, true);
+    }
+    for (uint8_t y = 0; y < 32; y++) {   // Left & Right Borders
+        oled_write_pixel(0, y, true);
+        oled_write_pixel(127, y, true);
+    }
 }
+
+// Function for centered text
+void oled_centered_text(const char *text, uint8_t row) {
+    uint8_t screen_width = 128; // Typical OLED width
+    uint8_t char_width = 6;     // Width per character
+    uint8_t text_length = strlen(text);
+    uint8_t x_start = (screen_width - (text_length * char_width)) / 2;
+    uint8_t cursor_x = x_start / char_width; // Convert to column-based position
+    oled_set_cursor(cursor_x, row);
+    oled_write(text, false);
+}
+
+// Function to get caps/num/lock status
+const char *get_lock_status(void) {
+    static char status[12] = "";  // Buffer to hold lock status
+    status[0] = '\0';  // Clear previous content
+
+    led_t led_state = host_keyboard_led_state();
+
+    if (led_state.caps_lock) {
+        strcat(status, "CAPS ");
+    }
+    if (led_state.num_lock) {
+        strcat(status, "NUM ");
+    }
+    if (led_state.scroll_lock) {
+        strcat(status, "SCR ");
+    }
+
+    if (status[0] != '\0') {  // Remove trailing space if there's a status
+        status[strlen(status) - 1] = '\0';
+    }
+
+    return status;
+}
+
+void oled_show_layer_and_lock(const char *layer_name, uint8_t row) {
+    char display_text[20];  // Buffer to hold the final text
+    strcpy(display_text, layer_name);  // Start with the layer name
+
+    const char *lock_status = get_lock_status();
+    if (strlen(lock_status) > 0) {  // If there's a lock status, append it
+        strcat(display_text, " || ");
+        strcat(display_text, lock_status);
+    }
+
+    oled_centered_text(display_text, row);
+}
+
 
 // Active Layers + Caps 
 bool oled_task_user(void) {
+//    oled_invert(true);
+    oled_clear();
+//    oled_draw_border();
+    
     switch (get_highest_layer(layer_state)) {
         case _BASE:
-            oled_write_P(PSTR("BASE\n"), false);
+            oled_show_layer_and_lock("B A S E", 2);
             break;
         case _GAME:
-            oled_write_P(PSTR("GAME\n"), false);
+            oled_show_layer_and_lock("G A M E", 2);
             break;
         case _COLOR:
-            oled_write_P(PSTR("COLOR\n"), false);
+            oled_show_layer_and_lock("C O L O R", 2);
             break;
         case _CLMK:
-            oled_write_P(PSTR("CLMK\n"), false);
+            oled_show_layer_and_lock("C L M K", 2);
             break;
         case _MODS:
-            oled_write_P(PSTR("MODS\n"), false);
+            oled_show_layer_and_lock("M O D S", 2);
             break;
         case _XTRAS:
-            oled_write_P(PSTR("XTRAS\n"), false);
+            oled_show_layer_and_lock("X T R A S", 2);
             break;
         default:
-            oled_write_ln_P(PSTR("Undefined"), false);
+            oled_show_layer_and_lock("Undefined", 2);
     }
 
-    // Host Keyboard LED Status
-    led_t led_state = host_keyboard_led_state();
-    oled_write_P(led_state.num_lock ? PSTR("NUM") : PSTR("\n"), false);
-    oled_write_P(led_state.caps_lock ? PSTR("CAPS") : PSTR("\n"), false);
-    oled_write_P(led_state.scroll_lock ? PSTR("SCR") : PSTR("\n"), false);
+// Host Keyboard LED Status
+//   led_t led_state = host_keyboard_led_state();
+//    oled_write_P(led_state.num_lock ? PSTR("        N U M") : PSTR("\n"), false);
+//    oled_write_P(led_state.caps_lock ? PSTR("        C A P S") : PSTR("\n"), false);
+//    oled_write_P(led_state.scroll_lock ? PSTR("       S C R") : PSTR("\n"), false);
     
     return false;
 }
@@ -97,7 +163,7 @@ bool oled_task_user(void) {
                          KC_ESC,          KC_1,               KC_2,          KC_3,          KC_4,          KC_5,                                                                          KC_6,          KC_7,          KC_8,          KC_9,              KC_0,               KC_PSCR, 
                          KC_TAB,          KC_Q,               KC_W,          KC_F,          KC_P,          KC_B,                                                                          KC_J,          KC_L,          KC_U,          KC_Y,              KC_TILD,            LSFT(KC_QUOT), 
                          KC_LSFT,         KC_A,               KC_R,          KC_S,          KC_T,          KC_G,                                                                          KC_M,          KC_N,          KC_E,          KC_I,              KC_O,               KC_RBRC, 
-                         KC_LCTL,         KC_Z,               KC_X,          KC_C,          KC_TRNS,       KC_V,           KC_QUOT,                                        RALT(KC_COMM), KC_K,          KC_H,          KC_COMM,       KC_DOT,            KC_MINS,            KC_LBRC, 
+                         KC_LCTL,         KC_Z,               KC_X,          KC_C,          KC_D,          KC_V,           KC_QUOT,                                        RALT(KC_COMM), KC_K,          KC_H,          KC_COMM,       KC_DOT,            KC_MINS,            KC_LBRC, 
                                                                              KC_LALT,       MO(_XTRAS),    MO(_MODS),      KC_SPC,                                         KC_BSPC,       KC_ENT,        KC_CAPS,       RGUI(KC_D)),
 /*
 *

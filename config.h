@@ -47,7 +47,8 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 // #define RGBLIGHT_SAT_STEP 17
 // #define RGBLIGHT_VAL_STEP 17
 
-#define OLED_BRIGHTNESS 128
+#define OLED_BRIGHTNESS 75
+//#define OLED_INVERT
 
 
 // Underglow
