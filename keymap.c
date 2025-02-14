@@ -38,13 +38,17 @@ void oled_draw_border(void) {
     }
 }
 
+// Display adjustments
+
+static uint32_t oled_last_input = 0; // Track keypress
+
 // Function for centered text
 void oled_centered_text(const char *text, uint8_t row) {
-    uint8_t screen_width = 128; // Typical OLED width
-    uint8_t char_width = 6;     // Width per character
+    uint8_t screen_width = 128; 
+    uint8_t char_width = 6;     
     uint8_t text_length = strlen(text);
     uint8_t x_start = (screen_width - (text_length * char_width)) / 2;
-    uint8_t cursor_x = x_start / char_width; // Convert to column-based position
+    uint8_t cursor_x = x_start / char_width; 
     oled_set_cursor(cursor_x, row);
     oled_write(text, false);
 }
@@ -86,13 +90,71 @@ void oled_show_layer_and_lock(const char *layer_name, uint8_t row) {
     oled_centered_text(display_text, row);
 }
 
+// Keypress changes
+
+bool process_record_user(uint16_t keycode, keyrecord_t *record) {
+    if (record->event.pressed) {
+        oled_last_input = timer_read32();  // Reset timeout
+    }
+
+    switch (keycode) {
+        case LT(4, KC_OPER):
+            if (record->tap.count && record->event.pressed) {
+                layer_move(6); // Send TO6 on tap
+                return false;  
+            }
+            break;
+        case LT(5, KC_OUT):
+            if (record->tap.count && record->event.pressed) {
+                layer_move(5); // Send TO5 on tap
+                return false;  
+            }
+            break;
+        case KC_EXEC:
+            if (record->event.pressed) {
+                register_code(KC_LCTL);
+                register_code(KC_LGUI);
+                register_code(KC_LEFT);
+                unregister_code(KC_LCTL);
+                unregister_code(KC_LGUI);
+                unregister_code(KC_LEFT);
+                return false;
+            }
+            break;
+        case KC_HELP:
+            if (record->event.pressed) {
+                register_code(KC_LCTL);
+                register_code(KC_LGUI);
+                register_code(KC_RIGHT);
+                unregister_code(KC_LCTL);
+                unregister_code(KC_LGUI);
+                unregister_code(KC_RIGHT);
+                return false;
+            }
+            break;
+        case KC_MENU:
+            if (record->event.pressed) {
+                register_code(KC_BSLS);
+                unregister_code(KC_BSLS);
+                register_code(KC_M);
+                unregister_code(KC_M);
+                return false;
+            }
+            break;                   
+    }
+
+    return true;
+}
 
 // Active Layers + Caps 
 bool oled_task_user(void) {
 //    oled_invert(true);
     oled_clear();
-//    oled_draw_border();
     
+    if (timer_elapsed32(oled_last_input) > OLED_TIMEOUT) {
+        return false;
+    }
+
     switch (get_highest_layer(layer_state)) {
         case _BASE:
             oled_show_layer_and_lock("B A S E", 2);
@@ -115,13 +177,7 @@ bool oled_task_user(void) {
         default:
             oled_show_layer_and_lock("Undefined", 2);
     }
-
-// Host Keyboard LED Status
-//   led_t led_state = host_keyboard_led_state();
-//    oled_write_P(led_state.num_lock ? PSTR("        N U M") : PSTR("\n"), false);
-//    oled_write_P(led_state.caps_lock ? PSTR("        C A P S") : PSTR("\n"), false);
-//    oled_write_P(led_state.scroll_lock ? PSTR("       S C R") : PSTR("\n"), false);
-    
+  
     return false;
 }
 
@@ -180,10 +236,10 @@ bool oled_task_user(void) {
 *
 */
         [_XTRAS] = LAYOUT(
-                         KC_NUBS,         TO(_GAME),          TO(_COLOR),    KC_NO,         KC_NO,         TO(_CLMK),                                                                     KC_NO,         KC_NO,         KC_NO,         KC_NO,             KC_NO,              KC_HOME, 
-                         KC_NO,           KC_BTN2,            KC_BTN4,       LCA(KC_W),     KC_BTN1,       LCAG(KC_3),                                                                    KC_F11,        KC_F12,        KC_NO,         KC_NO,             KC_NO,              KC_END, 
+                         KC_NUBS,         TO(_GAME),          TO(_COLOR),    KC_NO,         KC_NO,         TO(_CLMK),                                                                     KC_NO,         KC_NO,         KC_NO,         KC_NO,             KC_NO,              KC_RCBR, 
+                         LALT(KC_1),      KC_BTN2,            KC_BTN4,       LCA(KC_W),     KC_BTN1,       LCAG(KC_3),                                                                    KC_F11,        KC_F12,        KC_NO,         KC_NO,             KC_NO,              KC_LCBR, 
                          CDL,             KC_NO,              RCS(KC_TAB),   KC_F5,         LCTL(KC_TAB),  LCAG(KC_2),                                                                    KC_F6,         KC_F7,         KC_F8,         KC_F9,             KC_F10,             KC_GT, 
-                         CDR,             KC_MPRV,            KC_MPLY,       KC_MNXT,       RCS(KC_V),     LCAG(KC_1),     KC_MSEL,                                          KC_PWR,      KC_F1,         KC_F2,         KC_F3,         KC_F4,             KC_F5,              KC_LT, 
+                         CDR,             KC_MPRV,            KC_MPLY,       KC_MNXT,       RCS(KC_V),     LCAG(KC_1),     KC_MSEL,                                          KC_PWR,      KC_F1,         KC_F2,         KC_F3,         KC_F4,             KC_F5,              KC_LT,
                                                                              LGUI(KC_R),    TO(_BASE),     KC_NO,          KC_SPC,                                           KC_BSPC,     LCAG(KC_4),    LGUI(KC_LEFT), LGUI(KC_RGHT)),
 /*
 *
@@ -205,52 +261,3 @@ bool oled_task_user(void) {
 //                                                              KC_NO,         TO(_BASE),     KC_NO,         KC_NO,                                                                          KC_NO,         KC_NO,         KC_NO,         KC_NO),
 //    
 };
-
-bool process_record_user(uint16_t keycode, keyrecord_t *record) {
-    switch (keycode) {
-        case LT(4, KC_OPER):
-            if (record->tap.count && record->event.pressed) {
-                layer_move(6); // Send TO6 on tap
-                return false;  
-            }
-            break;
-        case LT(5, KC_OUT):
-            if (record->tap.count && record->event.pressed) {
-                layer_move(5); // Send TO5 on tap
-                return false;  
-            }
-            break;
-        case KC_EXEC:
-            if (record->event.pressed) {
-                register_code(KC_LCTL);
-                register_code(KC_LGUI);
-                register_code(KC_LEFT);
-                unregister_code(KC_LCTL);
-                unregister_code(KC_LGUI);
-                unregister_code(KC_LEFT);
-                return false;
-            }
-            break;
-        case KC_HELP:
-            if (record->event.pressed) {
-                register_code(KC_LCTL);
-                register_code(KC_LGUI);
-                register_code(KC_RIGHT);
-                unregister_code(KC_LCTL);
-                unregister_code(KC_LGUI);
-                unregister_code(KC_RIGHT);
-                return false;
-            }
-            break;
-        case KC_MENU:
-            if (record->event.pressed) {
-                register_code(KC_BSLS);
-                unregister_code(KC_BSLS);
-                register_code(KC_M);
-                unregister_code(KC_M);
-                return false;
-            }
-            break;                   
-    }
-    return true;
-}
