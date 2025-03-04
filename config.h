@@ -30,8 +30,9 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #define TAPPING_TERM 150
 
 // Configs
-#define split_usb_detect
-#define split_usb_timeout 2000
+#define SPLIT_USB_DETECT
+// #define split_usb_timeout 2000
+// #define SPLIT_USB_TIMEOUT_POLL 10
 
 // OLED
 #define OLED_BRIGHTNESS 25

@@ -61,13 +61,13 @@ const char *get_lock_status(void) {
     led_t led_state = host_keyboard_led_state();
 
     if (led_state.caps_lock) {
-        strcat(status, "CAPS ");
+        strcat(status, "CAPS\n");
     }
-    if (led_state.num_lock) {
-        strcat(status, "NUM ");
-    }
+//    if (led_state.num_lock) {
+//        strcat(status, "NUM\n");
+//    }
     if (led_state.scroll_lock) {
-        strcat(status, "SCR ");
+        strcat(status, "SCR\n");
     }
 
     if (status[0] != '\0') {  // Remove trailing space if there's a status
